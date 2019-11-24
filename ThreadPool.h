@@ -15,7 +15,7 @@ class ThreadPool {
 public:
     ThreadPool(size_t);
     template<class F, class... Args>
-    auto enqueue(F&& f, Args&&... args) 
+    auto enqueue(F&& f, Args&&... args) //右值引用  
         -> std::future<typename std::result_of<F(Args...)>::type>;
     ~ThreadPool();
 private:
@@ -45,8 +45,8 @@ inline ThreadPool::ThreadPool(size_t threads)
                     {
                         std::unique_lock<std::mutex> lock(this->queue_mutex);
                         this->condition.wait(lock,
-                            [this]{ return this->stop || !this->tasks.empty(); });
-                        if(this->stop && this->tasks.empty())
+                            [this]{ return this->stop || !this->tasks.empty(); });//如果线程停止或任务队列非空时不阻塞
+                        if(this->stop && this->tasks.empty())//如果线程停止并且任务队列为空退出线程
                             return;
                         task = std::move(this->tasks.front());
                         this->tasks.pop();
@@ -79,7 +79,7 @@ auto ThreadPool::enqueue(F&& f, Args&&... args)
 
         tasks.emplace([task](){ (*task)(); });
     }
-    condition.notify_one();
+    condition.notify_one();//通知线程执行
     return res;
 }
 
